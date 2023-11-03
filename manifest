@@ -1,0 +1,15 @@
+@prefix pav: <http://purl.org/pav/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mfe: <http://w3id.org/mifesto#> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix schema: <https://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+<> a mfe:Manifest;
+rdfs:label "damage" ;
+    pav:hasVersion <#version2> .
+
+<#version2> a mfe:Edition ;
+    doap:revision "v2" ;
+    # mfe:code <http://localhost:2002/$pilet-api/0/index.js> .
+    mfe:code <https://aecostore.github.io/damage-module/index.js> .
