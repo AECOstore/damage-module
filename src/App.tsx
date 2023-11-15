@@ -22,9 +22,9 @@ const App = ({ piral }: { piral: PiletApi }) => {
   const [activeConcept, setActiveConcept] = React.useState(0)
   const [enrichedConcepts, setEnrichedConcepts] = React.useState([])
 
-  React.useEffect(() => {
-    getAllAllowedSources()
-  }, [])
+  // React.useEffect(() => {
+  //   getAllAllowedSources()
+  // }, [])
 
 
   piral.on('store-data', ({ name, value }) => {
@@ -177,14 +177,14 @@ const App = ({ piral }: { piral: PiletApi }) => {
       <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={getDamage}>Get Damages</Button>
       {/* <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={setDamage}>Set Damage</Button> */}
       {/* <Button onClick={uploadImage}>Upload Image</Button> */}
-      {(enrichedConcepts.length) ? (
+      {/* {(enrichedConcepts.length) ? (
         <div>
           <p>Element {activeConcept + 1} of a total of {enrichedConcepts.length}:</p>
           <ElementData element={enrichedConcepts[activeConcept]} makeActiveConcept={makeActiveConcept} index={activeConcept} length={enrichedConcepts.length}/>
         </div>
       ) : (
         <></>
-      )}
+      )} */}
     </div>
   )
 }
