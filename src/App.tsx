@@ -5,8 +5,9 @@ import { Session } from '@inrupt/solid-client-authn-browser'
 import { PiletApi } from 'consolid-shell';
 import { findReferenceRegistry, ReferenceRegistry } from 'consolid-raapi'
 import { DCAT } from '@inrupt/vocab-common-rdf'
+import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material'
 
-const QueryEngine = require('@comunica/query-sparql').QueryEngine
+const QueryEngineLT = require('@comunica/query-sparql-link-traversal').QueryEngine;
 
 const rdfContentTypes = [
   "https://www.iana.org/assignments/media-types/text/turtle"
@@ -21,6 +22,7 @@ const App = ({ piral }: { piral: PiletApi }) => {
   const [allowedConcepts, setAllowedConcepts] = React.useState([])
   const [activeConcept, setActiveConcept] = React.useState(0)
   const [enrichedConcepts, setEnrichedConcepts] = React.useState([])
+  const [projectMediaTypes, setProjectMediaTypes] = React.useState([])
 
   // React.useEffect(() => {
   //   getAllAllowedSources()
@@ -171,10 +173,69 @@ const App = ({ piral }: { piral: PiletApi }) => {
     return knowledge
   }
 
+  async function queryMediaTypes() {
+    const query = `SELECT DISTINCT ?type WHERE {
+      ?resource <${DCAT.mediaType}> ?type
+    }`
+    const results = await piral.queryProject(piral, query)
+    const mediaTypes = results.map(i => i.get("type").id).filter(i => !i.includes("text/turtle"))
+    setProjectMediaTypes(mediaTypes)
+  }
+
+  async function queryStoresForConfigurations(e) {
+    // console.log('e :>> ', e);
+    // console.log('e.target.value :>> ', e.target.value);
+    const store = "https://raw.githubusercontent.com/AECOstore/RESOURCES/main/stores/root.ttl"
+
+    const t = "https://www.iana.org/assignments/media-types/model/gltf+json"
+    const myEngine = new QueryEngineLT()
+    const query = `
+    prefix dcat: <http://www.w3.org/ns/dcat#>
+    prefix mfe: <http://w3id.org/mifesto#>
+    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    prefix pav: <http://purl.org/pav/> 
+
+    SELECT DISTINCT ?code ?label ?module ?mt WHERE {
+      ?store dcat:dataset+ ?module .
+      ?module a mfe:Manifest ;
+        rdfs:label ?label ;
+        pav:hasVersion ?version .
+      ?version mfe:code ?code ;
+        mfe:compatibleMedia ?mt .
+    }`
+
+    const results = await myEngine.queryBindings(query, { sources: [store], lenient: true })
+    const modules = await results.toArray()
+    const config = piral.getData("CONFIGURATION")
+    console.log("config", config)
+    console.log('modules :>> ', modules);
+  }
   return (
     <div style={{ margin: 20 }}>
       <p>With this module, you can specify damage information for an object using the <a href="https://w3id.org/dot#">DOT ontology</a>. Select an object through any interface (3D geometry, imagery, query ...) and assign damage data.</p>
-      <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={getDamage}>Get Damages</Button>
+      <p>Find a fitting enrichment interface for the active project: </p>
+      <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={queryStoresForConfigurations}>Get Project Media Types</Button>
+      <div>
+        <FormControl key={"mediatypesdamage"} component="fieldset">
+          <FormLabel component="legend">Available Media Types</FormLabel>
+          <RadioGroup onChange={queryStoresForConfigurations}>
+            {projectMediaTypes.map((item, index) => (
+
+                  <FormControlLabel
+                    key={item}
+                    value={item}
+                    control={<Radio />}
+                    label={item}
+                  />
+
+            ))}    
+    
+          </RadioGroup>
+        </FormControl>
+      </div>
+
+
+      {/* <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={getDamage}>Get Damages</Button> */}
       {/* <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={setDamage}>Set Damage</Button> */}
       {/* <Button onClick={uploadImage}>Upload Image</Button> */}
       {/* {(enrichedConcepts.length) ? (
@@ -191,16 +252,16 @@ const App = ({ piral }: { piral: PiletApi }) => {
 
 const ElementData = ({ element, makeActiveConcept, index, length }) => {
   return (
-    <div style={{position: "relative", height: 200}}>
+    <div style={{ position: "relative", height: 200 }}>
       <p>This element is said to have the following types:</p>
-      <ul style={{marginBottom: 20}}>
+      <ul style={{ marginBottom: 20 }}>
         {element.semantics.results.bindings.map((el, i) => {
           return <li key={i}>{el["o"].value}</li>
         })}
       </ul>
 
-      <Button style={{position: "absolute", bottom: 10, left: 10}} variant="contained" disabled={!index} onClick={() => makeActiveConcept(element, index - 1 )}>PREVIOUS</Button>
-      <Button style={{position: "absolute", bottom: 10, right: 10}} variant="contained" disabled={index === length -1} onClick={() => makeActiveConcept(element, index + 1)}>NEXT</Button>
+      <Button style={{ position: "absolute", bottom: 10, left: 10 }} variant="contained" disabled={!index} onClick={() => makeActiveConcept(element, index - 1)}>PREVIOUS</Button>
+      <Button style={{ position: "absolute", bottom: 10, right: 10 }} variant="contained" disabled={index === length - 1} onClick={() => makeActiveConcept(element, index + 1)}>NEXT</Button>
     </div>
   )
 }
