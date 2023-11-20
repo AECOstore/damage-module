@@ -11,7 +11,7 @@ rdfs:label "damage" ;
 
 <#version2> a mfe:Edition ;
     doap:revision "v2" ;
-    # mfe:code <http://localhost:2002/$pilet-api/0/index.js> .
-    mfe:code <https://aecostore.github.io/damage-module/index.js> .
+    mfe:code <http://localhost:2002/$pilet-api/0/index.js> .
+    # mfe:code <https://aecostore.github.io/damage-module/index.js> .
 
     

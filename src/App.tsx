@@ -195,7 +195,7 @@ const App = ({ piral }: { piral: PiletApi }) => {
     prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     prefix pav: <http://purl.org/pav/> 
 
-    SELECT DISTINCT ?code ?label ?module ?mt WHERE {
+    SELECT DISTINCT ?code ?label ?module ?mt ?version WHERE {
       ?store dcat:dataset+ ?module .
       ?module a mfe:Manifest ;
         rdfs:label ?label ;
@@ -206,13 +206,32 @@ const App = ({ piral }: { piral: PiletApi }) => {
 
     const results = await myEngine.queryBindings(query, { sources: [store], lenient: true })
     const modules = await results.toArray()
-    const config = piral.getData("CONFIGURATION")
-    console.log("config", config)
     console.log('modules :>> ', modules);
+    await injectModule(modules[0])
   }
+
+async function injectModule(m) {
+  console.log('m :>> ', m);
+  const {version, label, code, module} = m
+    const injection =     {
+      "@id": module,
+      "spec": version,
+      "link": code,
+      "initialColumns": "7",
+      "initialRows": "4",
+      "type": "http://w3id.org/mifesto#Component",
+      "name": label
+    }
+
+    const config = piral.getData("CONFIGURATION")
+    config.items.push(injection)
+    console.log('config 2 :>> ', config);
+    piral.setData("CONFIGURATION", config)
+}
+
   return (
     <div style={{ margin: 20 }}>
-      <p>With this module, you can specify damage information for an object using the <a href="https://w3id.org/dot#">DOT ontology</a>. Select an object through any interface (3D geometry, imagery, query ...) and assign damage data.</p>
+      <p>With thixs module, you can specify damage information for an object using the <a href="https://w3id.org/dot#">DOT ontology</a>. Select an object through any interface (3D geometry, imagery, query ...) and assign damage data.</p>
       <p>Find a fitting enrichment interface for the active project: </p>
       <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={queryStoresForConfigurations}>Get Project Media Types</Button>
       <div>
