@@ -5,7 +5,8 @@ import { Session } from '@inrupt/solid-client-authn-browser'
 import { PiletApi } from 'consolid-shell';
 import { findReferenceRegistry, ReferenceRegistry } from 'consolid-raapi'
 import { DCAT } from '@inrupt/vocab-common-rdf'
-import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material'
+import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, FormGroup, Switch } from '@mui/material'
+import DamageReportForm from './DamageReportForm'
 
 const QueryEngineLT = require('@comunica/query-sparql-link-traversal').QueryEngine;
 
@@ -14,7 +15,7 @@ const rdfContentTypes = [
 ]
 
 
-const App = ({ piral }: { piral: PiletApi }) => {
+const App = ({ piral, setPiral}: { piral: PiletApi, setPiral: any }) => {
   const constants = piral.getData("CONSTANTS")
   const [selection, setSelection] = React.useState([])
   const [loading, setLoading] = React.useState(false)
@@ -194,63 +195,71 @@ const App = ({ piral }: { piral: PiletApi }) => {
     prefix mfe: <http://w3id.org/mifesto#>
     prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     prefix pav: <http://purl.org/pav/> 
+    prefix doap: <http://usefulinc.com/ns/doap#>
 
-    SELECT DISTINCT ?code ?label ?module ?mt ?version WHERE {
+    SELECT DISTINCT ?code ?label ?module ?revision WHERE {
       ?store dcat:dataset+ ?module .
       ?module a mfe:Manifest ;
         rdfs:label ?label ;
         pav:hasVersion ?version .
       ?version mfe:code ?code ;
-        mfe:compatibleMedia ?mt .
+        doap:revision ?revision ;
+        mfe:compatibleMedia <${t}> .
     }`
 
     const results = await myEngine.queryBindings(query, { sources: [store], lenient: true })
     const modules = await results.toArray()
-    console.log('modules :>> ', modules);
-    await injectModule(modules[0])
+    const newModule = {
+      revision: modules[0].get('revision').id,
+      label: modules[0].get('label').id,
+      code: modules[0].get('code').id,
+      module: modules[0].get('module').id
+    }
+    await injectModule(newModule)
   }
 
 async function injectModule(m) {
+  const {revision, label, code, module} = m
   console.log('m :>> ', m);
-  const {version, label, code, module} = m
     const injection =     {
       "@id": module,
-      "spec": version,
+      "spec": revision.replace(/"/g, ''),
       "link": code,
       "initialColumns": "7",
       "initialRows": "4",
       "type": "http://w3id.org/mifesto#Component",
-      "name": label
+      "name": label.replace(/"/g, '')
     }
-
+    console.log('injection :>> ', injection);
     const config = piral.getData("CONFIGURATION")
     config.items.push(injection)
-    console.log('config 2 :>> ', config);
-    piral.setData("CONFIGURATION", config)
+    piral.setData(constants.FEEDURL, config)
 }
 
   return (
     <div style={{ margin: 20 }}>
-      <p>With thixs module, you can specify damage information for an object using the <a href="https://w3id.org/dot#">DOT ontology</a>. Select an object through any interface (3D geometry, imagery, query ...) and assign damage data.</p>
-      <p>Find a fitting enrichment interface for the active project: </p>
-      <Button style={buttonStyle} disabled={loading} fullWidth variant={"contained"} onClick={queryStoresForConfigurations}>Get Project Media Types</Button>
-      <div>
-        <FormControl key={"mediatypesdamage"} component="fieldset">
-          <FormLabel component="legend">Available Media Types</FormLabel>
-          <RadioGroup onChange={queryStoresForConfigurations}>
+      <h3>Store Query Module</h3>
+      <p>This module allows to query the AECOStore to find an enrichment interface that is compatible with the resources in the current project: </p>
+      <Button disabled={loading} fullWidth variant={"contained"} onClick={queryMediaTypes}>Get Project Media Types</Button>
+      <div style={{marginTop: 5}}>
+        <FormGroup key={"mediatypesdamage"}>
+          <FormLabel component="legend">Available Media Types:</FormLabel>
             {projectMediaTypes.map((item, index) => (
 
                   <FormControlLabel
                     key={item}
                     value={item}
-                    control={<Radio />}
+                    control={<Switch defaultChecked />}
                     label={item}
                   />
 
             ))}    
     
-          </RadioGroup>
-        </FormControl>
+        </FormGroup>
+
+        <hr/>
+        <hr/>
+        <DamageReportForm/>
       </div>
 
 
