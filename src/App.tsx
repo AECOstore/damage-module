@@ -174,6 +174,10 @@ const App = ({ piral, setPiral}: { piral: PiletApi, setPiral: any }) => {
     return knowledge
   }
 
+  function setActiveMediaType(item) {
+    
+  }
+
   async function queryMediaTypes() {
     const query = `SELECT DISTINCT ?type WHERE {
       ?resource <${DCAT.mediaType}> ?type
@@ -213,26 +217,33 @@ const App = ({ piral, setPiral}: { piral: PiletApi, setPiral: any }) => {
       revision: modules[0].get('revision').id,
       label: modules[0].get('label').id,
       code: modules[0].get('code').id,
-      module: modules[0].get('module').id
+      module: modules[0].get('module').id,
+      compatibleMedia: t
     }
     await injectModule(newModule)
   }
 
 async function injectModule(m) {
-  const {revision, label, code, module} = m
-  console.log('m :>> ', m);
-    const injection =     {
+  // const current = await fetch(piral.getData("FEEDURL")).then(i => i.text())
+  const {revision, label, code, module, compatibleMedia} = m
+  const injection =     {
       "@id": module,
       "spec": revision.replace(/"/g, ''),
       "link": code,
-      "initialColumns": "7",
-      "initialRows": "4",
+      "initialColumns": "4",
+      "initialRows": "10",
       "type": "http://w3id.org/mifesto#Component",
-      "name": label.replace(/"/g, '')
+      "name": label.replace(/"/g, ''),
+      compatibleMedia 
     }
-    console.log('injection :>> ', injection);
     const config = piral.getData("CONFIGURATION")
     config.items.push(injection)
+    config.items.forEach(item => {
+      if (item.name === "Demo") {
+        item.hosts = [item.hosts]
+        item.hosts.push(module)
+      }
+    })
     piral.setData(constants.FEEDURL, config)
 }
 
@@ -240,21 +251,24 @@ async function injectModule(m) {
     <div style={{ margin: 20 }}>
       <h3>Store Query Module</h3>
       <p>This module allows to query the AECOStore to find an enrichment interface that is compatible with the resources in the current project: </p>
-      <Button disabled={loading} fullWidth variant={"contained"} onClick={queryMediaTypes}>Get Project Media Types</Button>
+      <Button disabled={loading} fullWidth variant={"contained"} onClick={queryStoresForConfigurations}>Get Project Media Types</Button>
       <div style={{marginTop: 5}}>
         <FormGroup key={"mediatypesdamage"}>
           <FormLabel component="legend">Available Media Types:</FormLabel>
+          <RadioGroup
+    aria-labelledby="demo-radio-buttons-group-label"
+    name="radio-buttons-group"
+    onChange={(e) => queryStoresForConfigurations(e.target.value)}
+  >
             {projectMediaTypes.map((item, index) => (
-
                   <FormControlLabel
                     key={item}
                     value={item}
-                    control={<Switch defaultChecked />}
+                    control={<Radio/>}
                     label={item}
                   />
-
             ))}    
-    
+      </RadioGroup>
         </FormGroup>
 
         <hr/>
